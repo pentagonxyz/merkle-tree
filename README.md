@@ -98,6 +98,34 @@ for (const [i, v] of tree.entries()) {
 
 In practice this might be done in a frontend application prior to submitting the proof on-chain, with the address looked up being that of the connected wallet.
 
+### Obtaining a Proof (from raw hashes)
+
+Assume we're looking to generate a proof for the entry that corresponds to hash `0x11...11`.
+
+```js
+import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
+import fs from "fs";
+
+// (1)
+const tree = StandardMerkleTree.load(JSON.parse(fs.readFileSync("tree.json", "utf8")));
+
+// (2)
+for (const [i, v] of tree.entries()) {
+  if (v === '0x1111111111111111111111111111111111111111111111111111111111111111') {
+    // (3)
+    const proof = tree.getProof(i);
+    console.log('Leaf hash:', v);
+    console.log('Proof:', proof);
+  }
+}
+```
+
+1. Load the tree from the description that was generated previously.
+2. Loop through the entries to find the one you're interested in.
+3. Generate the proof using the index of the entry.
+
+In practice this might be done in a frontend application prior to submitting the proof on-chain, with the address looked up being that of the connected wallet.
+
 ### Validating a Proof in Solidity
 
 Once the proof has been generated, it can be validated in Solidity using [`MerkleProof`] as in the following example:
