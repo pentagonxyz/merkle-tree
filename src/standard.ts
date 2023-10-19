@@ -6,8 +6,8 @@ import { getProof, isValidMerkleTree, makeMerkleTree, processProof, renderMerkle
 import { checkBounds } from './utils/check-bounds';
 import { throwError } from './utils/throw-error';
 
-function standardLeafHash<T extends any[]>(value: T, types: string[]): Bytes {
-  return keccak256(keccak256(hexToBytes(defaultAbiCoder.encode(types, value))));
+function standardLeafHash<T extends any[]>(value: T, types: string[] | undefined): Bytes {
+  return types !== undefined ? keccak256(keccak256(hexToBytes(defaultAbiCoder.encode(types, value)))) : value;
 }
 
 interface StandardMerkleTreeData<T extends any[]> {
@@ -26,7 +26,7 @@ export class StandardMerkleTree<T extends any[]> {
   private constructor(
     private readonly tree: Bytes[],
     private readonly values: { value: T, treeIndex: number }[],
-    private readonly leafEncoding: string[],
+    private readonly leafEncoding: string[] | undefined,
   ) {
     this.hashLookup =
       Object.fromEntries(values.map(({ value }, valueIndex) => [
@@ -35,7 +35,7 @@ export class StandardMerkleTree<T extends any[]> {
       ]));
   }
 
-  static of<T extends any[]>(values: T[], leafEncoding: string[]) {
+  static of<T extends any[]>(values: T[], leafEncoding: string[] | undefined) {
     const hashedValues = values
       .map((value, valueIndex) => ({ value, valueIndex, hash: standardLeafHash(value, leafEncoding) }))
       .sort((a, b) => compareBytes(a.hash, b.hash));
@@ -61,12 +61,12 @@ export class StandardMerkleTree<T extends any[]> {
     );
   }
 
-  static verify<T extends any[]>(root: string, leafEncoding: string[], leaf: T, proof: string[]): boolean {
+  static verify<T extends any[]>(root: string, leafEncoding: string[] | undefined, leaf: T, proof: string[]): boolean {
     const impliedRoot = processProof(standardLeafHash(leaf, leafEncoding), proof.map(hexToBytes));
     return equalsBytes(impliedRoot, hexToBytes(root));
   }
 
-  static verifyMultiProof<T extends any[]>(root: string, leafEncoding: string[], multiproof: MultiProof<string, T>): boolean {
+  static verifyMultiProof<T extends any[]>(root: string, leafEncoding: string[] | undefined, multiproof: MultiProof<string, T>): boolean {
     const leafHashes = multiproof.leaves.map(leaf => standardLeafHash(leaf, leafEncoding));
     const proofBytes = multiproof.proof.map(hexToBytes);
 
